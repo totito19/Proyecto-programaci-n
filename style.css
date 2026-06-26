@@ -1,738 +1,585 @@
 /* ============================================================
    NightShop — style.css
-   Dark mode · Space Grotesk + Space Mono
+   Versión simplificada con comentarios explicativos
    ============================================================ */
 
-/* ---------- tokens ---------- */
+
+/* ----------------------------------------------------------
+   1. VARIABLES CSS (tokens de diseño)
+   ----------------------------------------------------------
+   Las variables CSS empiezan con "--" y se definen dentro de :root,
+   que representa el elemento raíz (<html>).
+   Esto nos permite cambiar colores y tamaños en un solo lugar
+   y que se actualicen en todo el sitio automáticamente.
+---------------------------------------------------------- */
 :root {
-  --bg-0:        #0c0c0f;
-  --bg-1:        #13131a;
-  --bg-2:        #1c1c27;
-  --bg-3:        #252535;
+  --fondo-oscuro:    #0f0f15;   /* fondo de toda la página */
+  --fondo-tarjeta:   #1a1a25;   /* fondo de tarjetas y paneles */
+  --fondo-input:     #252535;   /* fondo de campos de texto */
 
-  --accent:      #6c63ff;
-  --accent-hover:#8078ff;
-  --accent-dim:  rgba(108,99,255,.15);
+  --acento:          #6c63ff;   /* color principal (botones, links) */
+  --acento-hover:    #8078ff;   /* el mismo pero más claro, para el hover */
 
-  --danger:      #ff4d6d;
-  --danger-dim:  rgba(255,77,109,.15);
-  --success:     #3ecf8e;
+  --texto-principal: #eeeef5;   /* texto normal */
+  --texto-suave:     #9898b3;   /* texto secundario (labels, subtítulos) */
 
-  --text-1:      #eeeef5;
-  --text-2:      #9898b3;
-  --text-3:      #5a5a7a;
+  --error:           #ff4d6d;   /* color para mensajes de error */
+  --exito:           #3ecf8e;   /* color para mensajes de éxito */
 
-  --border:      rgba(255,255,255,.07);
-  --border-focus:var(--accent);
-
-  --radius-sm:   6px;
-  --radius-md:   12px;
-  --radius-lg:   18px;
-
-  --shadow-card: 0 2px 20px rgba(0,0,0,.45);
-  --shadow-lift: 0 8px 32px rgba(0,0,0,.6);
-
-  --font-body:  'Space Grotesk', sans-serif;
-  --font-mono:  'Space Mono', monospace;
-
-  --cart-w:     380px;
+  --borde:           rgba(255,255,255,0.08); /* borde sutil entre elementos */
 }
 
-/* ---------- reset ---------- */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; }
+/* ----------------------------------------------------------
+   2. RESET BÁSICO
+   ----------------------------------------------------------
+   Por defecto, cada navegador aplica sus propios márgenes y
+   paddings. Este reset los elimina para tener una base limpia
+   y consistente entre Chrome, Firefox, Safari, etc.
+---------------------------------------------------------- */
+*, *::before, *::after {
+  box-sizing: border-box; /* el padding y border se incluyen en el ancho total */
+  margin: 0;
+  padding: 0;
+}
 
 body {
-  background: var(--bg-0);
-  color: var(--text-1);
-  font-family: var(--font-body);
-  font-size: 15px;
-  line-height: 1.6;
-  min-height: 100vh;
+  background-color: var(--fondo-oscuro);
+  color: var(--texto-principal);
+  font-family: Arial, sans-serif; /* fuente simple, sin instalar nada */
+  font-size: 16px;
+  line-height: 1.6; /* espacio entre líneas para mejor lectura */
 }
 
-a { color: var(--accent); text-decoration: none; }
-a:hover { color: var(--accent-hover); }
 
-ul { list-style: none; }
-
-img { display: block; max-width: 100%; }
-
-/* ---------- utility ---------- */
-.hidden { display: none !important; }
-
-.section-inner {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 24px;
+/* ----------------------------------------------------------
+   3. CLASE UTILITARIA: .oculto
+   ----------------------------------------------------------
+   Esta es la clase más importante del proyecto.
+   JS agrega y quita esta clase para mostrar/ocultar elementos.
+   "display: none" hace que el elemento no ocupe espacio en la página.
+---------------------------------------------------------- */
+.oculto {
+  display: none !important;
+  /* El !important evita que otros estilos puedan sobreescribir este */
 }
 
-.section-title {
-  font-size: 1.6rem;
-  font-weight: 700;
-  letter-spacing: -.02em;
-  color: var(--text-1);
-  margin-bottom: 24px;
+
+/* ----------------------------------------------------------
+   4. MENSAJES DE ERROR
+---------------------------------------------------------- */
+.error-texto {
+  color: var(--error);
+  background: rgba(255, 77, 109, 0.12); /* fondo levemente rojo */
+  border: 1px solid var(--error);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  font-size: 0.9rem;
 }
 
-/* ---------- alerts ---------- */
-.alert {
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
-  font-size: .9rem;
-  margin-bottom: 16px;
-}
-.alert--error  { background: var(--danger-dim); color: var(--danger); border: 1px solid var(--danger); }
-.alert--success{ background: rgba(62,207,142,.12); color: var(--success); border: 1px solid var(--success); }
 
-/* ---------- spinner ---------- */
-.spinner {
-  display: inline-block;
-  width: 16px; height: 16px;
-  border: 2px solid rgba(255,255,255,.25);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin .7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ---------- empty / loading states ---------- */
-.loading-state {
-  color: var(--text-2);
-  text-align: center;
-  padding: 48px 0;
-  font-size: .95rem;
-}
-
-.empty-state {
+/* ----------------------------------------------------------
+   5. PANTALLA DE LOGIN
+   ----------------------------------------------------------
+   Usamos flexbox para centrar la tarjeta de login
+   tanto horizontal como verticalmente en la pantalla.
+---------------------------------------------------------- */
+#login-section {
+  min-height: 100vh; /* ocupa toda la altura de la pantalla */
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 56px 0;
-  color: var(--text-2);
-  font-size: .95rem;
-}
-.empty-icon { font-size: 2.6rem; }
-
-/* ============================================================
-   BUTTONS
-   ============================================================ */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border-radius: var(--radius-sm);
-  font-family: var(--font-body);
-  font-size: .9rem;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  transition: background .18s, color .18s, transform .12s, box-shadow .18s;
-  white-space: nowrap;
-}
-.btn:active { transform: scale(.97); }
-
-.btn--primary {
-  background: var(--accent);
-  color: #fff;
-}
-.btn--primary:hover { background: var(--accent-hover); box-shadow: 0 0 20px rgba(108,99,255,.4); }
-
-.btn--outline {
-  background: transparent;
-  color: var(--text-1);
-  border: 1px solid var(--border);
-}
-.btn--outline:hover { border-color: var(--accent); color: var(--accent); }
-
-.btn--ghost {
-  background: transparent;
-  color: var(--text-2);
-  padding: 8px;
-}
-.btn--ghost:hover { color: var(--text-1); }
-
-.btn--danger {
-  background: var(--danger-dim);
-  color: var(--danger);
-  border: 1px solid var(--danger);
-}
-.btn--danger:hover { background: var(--danger); color: #fff; }
-
-.btn--sm  { padding: 7px 14px; font-size: .82rem; }
-.btn--full { width: 100%; }
-
-/* ============================================================
-   FORMS
-   ============================================================ */
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 18px;
-}
-
-.form-group label {
-  font-size: .82rem;
-  font-weight: 600;
-  color: var(--text-2);
-  letter-spacing: .04em;
-  text-transform: uppercase;
-}
-
-.form-group input {
-  background: var(--bg-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text-1);
-  font-family: var(--font-body);
-  font-size: .95rem;
-  padding: 11px 14px;
-  transition: border-color .18s, box-shadow .18s;
-  outline: none;
-}
-.form-group input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-dim);
-}
-.form-group input::placeholder { color: var(--text-3); }
-
-/* ============================================================
-   LOGIN SCREEN
-   ============================================================ */
-.login-screen {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;  /* los elementos se apilan verticalmente */
+  align-items: center;     /* centrado horizontal */
+  justify-content: center; /* centrado vertical */
+  gap: 14px;               /* espacio entre cada elemento hijo */
   padding: 24px;
-  background:
-    radial-gradient(ellipse 60% 60% at 20% 20%, rgba(108,99,255,.15) 0%, transparent 70%),
-    radial-gradient(ellipse 50% 50% at 80% 80%, rgba(255,77,109,.08) 0%, transparent 70%),
-    var(--bg-0);
 }
 
-.login-card {
-  background: var(--bg-1);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 48px 40px;
-  width: 100%;
-  max-width: 420px;
-  box-shadow: var(--shadow-lift);
+#login-section h1 {
+  font-size: 2rem;
+  color: var(--texto-principal);
+  margin-bottom: 8px;
 }
 
-.login-logo {
+/* Estilos para los campos de texto (aplica a todos los input del proyecto) */
+input[type="text"],
+input[type="password"],
+input[type="search"] {
+  background: var(--fondo-input);
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  color: var(--texto-principal);
+  font-size: 1rem;
+  padding: 10px 14px;
+  width: 280px;
+  outline: none; /* quitamos el borde azul feo del navegador */
+  transition: border-color 0.2s; /* animación suave al hacer foco */
+}
+
+/* Cambia el borde cuando el usuario hace clic en el campo */
+input:focus {
+  border-color: var(--acento);
+}
+
+/* Texto gris de placeholder */
+input::placeholder {
+  color: var(--texto-suave);
+}
+
+
+/* ----------------------------------------------------------
+   6. BOTONES
+   ----------------------------------------------------------
+   Un estilo base que aplica a todos los botones del sitio.
+---------------------------------------------------------- */
+button {
+  background: var(--acento);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer; /* cambia el cursor a manita al pasar por encima */
+  transition: background 0.2s; /* animación suave */
+}
+
+button:hover {
+  background: var(--acento-hover);
+}
+
+/* Botones con fondo transparente (para cerrar sesión, etc.) */
+button.btn-secundario {
+  background: transparent;
+  border: 1px solid var(--borde);
+  color: var(--texto-suave);
+}
+button.btn-secundario:hover {
+  border-color: var(--acento);
+  color: var(--acento);
+}
+
+/* Botón de peligro (vaciar carrito) */
+button.btn-peligro {
+  background: transparent;
+  border: 1px solid var(--error);
+  color: var(--error);
+}
+button.btn-peligro:hover {
+  background: var(--error);
+  color: white;
+}
+
+
+/* ----------------------------------------------------------
+   7. HEADER
+   ----------------------------------------------------------
+   position: sticky hace que el header se quede fijo arriba
+   mientras el usuario hace scroll hacia abajo.
+---------------------------------------------------------- */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100; /* se dibuja por encima de todo lo demás */
+  background: rgba(15, 15, 21, 0.9); /* semitransparente */
+  backdrop-filter: blur(10px); /* difumina lo que hay detrás */
+  border-bottom: 1px solid var(--borde);
+  padding: 14px 32px;
   display: flex;
   align-items: center;
+  gap: 24px;
+}
+
+header h2 {
+  font-size: 1.3rem;
+  margin-right: auto; /* empuja todo lo demás hacia la derecha */
+}
+
+nav a {
+  color: var(--texto-suave);
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: color 0.2s;
+}
+nav a:hover {
+  color: var(--texto-principal);
+  background: var(--fondo-tarjeta);
+}
+
+/* Botones del header más chicos */
+header button {
+  padding: 7px 14px;
+  font-size: 0.85rem;
+}
+
+
+/* ----------------------------------------------------------
+   8. SECCIONES (perfil y catálogo)
+   ----------------------------------------------------------
+   Las secciones tienen padding para que el contenido
+   no quede pegado a los bordes de la pantalla.
+---------------------------------------------------------- */
+section {
+  max-width: 1200px;  /* no se estira demasiado en pantallas grandes */
+  margin: 0 auto;     /* centrado horizontal */
+  padding: 48px 24px;
+}
+
+section h2 {
+  font-size: 1.5rem;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--borde);
+  padding-bottom: 12px;
+}
+
+
+/* ----------------------------------------------------------
+   9. TARJETA DE PERFIL
+   ----------------------------------------------------------
+   Muestra los datos del usuario con fondo oscuro y borde.
+---------------------------------------------------------- */
+#tarjeta-perfil {
+  background: var(--fondo-tarjeta);
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: 24px;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
-  margin-bottom: 32px;
 }
 
-.logo-mark {
-  width: 36px; height: 36px;
-  background: var(--accent);
-  color: #fff;
-  border-radius: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 1.1rem;
+#tarjeta-perfil p {
+  color: var(--texto-suave);
+  font-size: 0.95rem;
 }
 
-.logo-text {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--text-1);
-  letter-spacing: -.02em;
+#tarjeta-perfil strong {
+  color: var(--texto-suave);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.login-card h1 {
-  font-size: 1.7rem;
-  font-weight: 700;
-  letter-spacing: -.03em;
-  margin-bottom: 6px;
+#tarjeta-perfil span {
+  color: var(--texto-principal);
+  margin-left: 8px;
 }
 
-.login-subtitle {
-  color: var(--text-2);
-  font-size: .9rem;
+
+/* ----------------------------------------------------------
+   10. CONTROLES DE BÚSQUEDA Y FILTRO
+---------------------------------------------------------- */
+#controles {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap; /* si no entran, se acomodan en la siguiente línea */
   margin-bottom: 28px;
 }
 
-/* ============================================================
-   HEADER
-   ============================================================ */
-.site-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: rgba(12,12,15,.85);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--border);
-}
-
-.header-inner {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 24px;
-  height: 64px;
-  display: flex;
-  align-items: center;
-  gap: 32px;
-}
-
-.site-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-  color: inherit;
-  flex-shrink: 0;
-}
-.site-logo:hover { color: inherit; }
-
-.site-nav {
-  display: flex;
-  gap: 4px;
-  flex: 1;
-}
-
-.nav-link {
-  padding: 6px 14px;
-  border-radius: var(--radius-sm);
-  font-size: .88rem;
-  font-weight: 500;
-  color: var(--text-2);
-  transition: color .15s, background .15s;
-}
-.nav-link:hover { color: var(--text-1); background: var(--bg-2); }
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-left: auto;
-}
-
-.cart-btn {
-  position: relative;
-  color: var(--text-1) !important;
-}
-
-.cart-count {
-  position: absolute;
-  top: -4px; right: -4px;
-  background: var(--accent);
-  color: #fff;
-  font-size: .65rem;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  width: 18px; height: 18px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-
-/* ============================================================
-   PROFILE
-   ============================================================ */
-.profile-section {
-  padding: 60px 0 40px;
-}
-
-.profile-card {
-  background: var(--bg-1);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 28px 32px;
-  display: flex;
-  align-items: center;
-  gap: 28px;
-  box-shadow: var(--shadow-card);
-  max-width: 640px;
-}
-
-.profile-avatar {
-  width: 72px; height: 72px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  font-weight: 700;
-  font-family: var(--font-mono);
-  flex-shrink: 0;
-}
-
-.profile-name {
-  font-size: 1.15rem;
-  font-weight: 700;
-  margin-bottom: 12px;
-  color: var(--text-1);
-}
-
-.profile-details {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.profile-details li {
-  display: flex;
-  gap: 12px;
-  font-size: .88rem;
-  color: var(--text-2);
-}
-
-.detail-label {
-  font-weight: 600;
-  color: var(--text-3);
-  text-transform: uppercase;
-  font-size: .75rem;
-  letter-spacing: .05em;
-  min-width: 60px;
-  padding-top: 1px;
-}
-
-/* ============================================================
-   CATALOG
-   ============================================================ */
-#catalog-section {
-  padding: 0 0 80px;
-}
-
-.catalog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 32px;
-}
-.catalog-header .section-title { margin-bottom: 0; }
-
-.catalog-controls {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.search-wrapper {
-  position: relative;
-}
-.search-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-3);
-  pointer-events: none;
-}
-#search-input {
-  background: var(--bg-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text-1);
-  font-family: var(--font-body);
-  font-size: .88rem;
-  padding: 9px 14px 9px 36px;
-  width: 240px;
-  outline: none;
-  transition: border-color .18s, box-shadow .18s;
-}
-#search-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-dim);
-}
-#search-input::placeholder { color: var(--text-3); }
-
-#category-filter {
-  background: var(--bg-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text-1);
-  font-family: var(--font-body);
-  font-size: .88rem;
-  padding: 9px 36px 9px 14px;
-  appearance: none;
-  -webkit-appearance: none;
+/* El select (dropdown) de categorías */
+select {
+  background: var(--fondo-input);
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  color: var(--texto-principal);
+  font-size: 0.95rem;
+  padding: 10px 14px;
   cursor: pointer;
   outline: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239898b3' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  transition: border-color .18s;
 }
-#category-filter:focus { border-color: var(--accent); }
-#category-filter option { background: var(--bg-2); }
+select:focus {
+  border-color: var(--acento);
+}
 
-/* ---------- product grid ---------- */
-.products-grid {
+#buscador {
+  width: 240px;
+}
+
+
+/* ----------------------------------------------------------
+   11. GRILLA DE PRODUCTOS
+   ----------------------------------------------------------
+   CSS Grid crea la grilla automáticamente.
+   "auto-fill" + "minmax" significa: poné tantas columnas como
+   entren, donde cada una mide entre 200px y el máximo disponible.
+   Así se adapta sola a cualquier pantalla.
+---------------------------------------------------------- */
+#grilla-productos {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 20px;
 }
 
-/* ---------- product card ---------- */
-.product-card {
-  background: var(--bg-1);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+
+/* ----------------------------------------------------------
+   12. TARJETA DE PRODUCTO
+   ----------------------------------------------------------
+   Cada producto generado por JS tendrá esta clase.
+   Usamos flexbox en columna para que el botón quede siempre abajo.
+---------------------------------------------------------- */
+.tarjeta-producto {
+  background: var(--fondo-tarjeta);
+  border: 1px solid var(--borde);
+  border-radius: 10px;
   display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  transition: transform .2s, box-shadow .2s, border-color .2s;
-  box-shadow: var(--shadow-card);
-}
-.product-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lift);
-  border-color: rgba(108,99,255,.35);
+  flex-direction: column; /* imagen arriba, texto en el medio, botón abajo */
+  overflow: hidden; /* la imagen no se sale de las esquinas redondeadas */
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.product-card__img-wrap {
-  background: #fff;
+/* Efecto al pasar el mouse por encima */
+.tarjeta-producto:hover {
+  transform: translateY(-4px); /* se sube un poco */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* Contenedor de la imagen (fondo blanco para que se vea bien) */
+.tarjeta-producto .imagen-wrap {
+  background: white;
+  padding: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 200px;
-  padding: 24px;
+  height: 180px;
 }
-.product-card__img-wrap img {
-  max-height: 152px;
-  object-fit: contain;
-  transition: transform .3s;
-}
-.product-card:hover .product-card__img-wrap img { transform: scale(1.06); }
 
-.product-card__body {
-  padding: 16px 18px;
+.tarjeta-producto img {
+  max-height: 140px;
+  object-fit: contain; /* escala la imagen sin deformarla */
+}
+
+/* Texto de la tarjeta */
+.tarjeta-producto .info {
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  flex: 1;
+  gap: 6px;
+  flex: 1; /* ocupa el espacio disponible, empujando el botón hacia abajo */
 }
 
-.product-card__category {
-  font-size: .72rem;
-  font-weight: 600;
+.tarjeta-producto .categoria {
+  font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--accent);
+  letter-spacing: 0.06em;
+  color: var(--acento);
+  font-weight: bold;
 }
 
-.product-card__name {
-  font-size: .9rem;
-  font-weight: 500;
-  color: var(--text-1);
-  line-height: 1.45;
+.tarjeta-producto .nombre {
+  font-size: 0.88rem;
+  color: var(--texto-principal);
+  line-height: 1.4;
+  /* Limita el texto a 2 líneas y pone "..." si es más largo */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.product-card__price {
-  font-family: var(--font-mono);
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--text-1);
+.tarjeta-producto .precio {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: var(--texto-principal);
   margin-top: auto;
-  padding-top: 6px;
 }
 
-.product-card__footer {
-  padding: 0 18px 18px;
+/* Botón dentro de la tarjeta */
+.tarjeta-producto .footer-tarjeta {
+  padding: 0 14px 14px;
 }
 
-/* ============================================================
-   CART PANEL
-   ============================================================ */
-.cart-panel {
+.tarjeta-producto button {
+  width: 100%; /* ocupa todo el ancho de la tarjeta */
+  font-size: 0.85rem;
+  padding: 9px;
+}
+
+
+/* ----------------------------------------------------------
+   13. CARRITO LATERAL (ASIDE)
+   ----------------------------------------------------------
+   El carrito se muestra como un panel que aparece desde la derecha.
+   position: fixed hace que quede encima de todo el contenido.
+---------------------------------------------------------- */
+#panel-carrito {
   position: fixed;
-  inset: 0;
-  z-index: 200;
-  pointer-events: none;
-}
-.cart-panel.open { pointer-events: all; }
-
-.cart-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,.55);
-  backdrop-filter: blur(3px);
-  opacity: 0;
-  transition: opacity .25s;
-}
-.cart-panel.open .cart-overlay { opacity: 1; }
-
-.cart-drawer {
-  position: absolute;
-  top: 0; right: 0; bottom: 0;
-  width: var(--cart-w);
-  max-width: 95vw;
-  background: var(--bg-1);
-  border-left: 1px solid var(--border);
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 360px;
+  background: var(--fondo-tarjeta);
+  border-left: 1px solid var(--borde);
   display: flex;
   flex-direction: column;
-  transform: translateX(100%);
-  transition: transform .28s cubic-bezier(.4,0,.2,1);
+  z-index: 200; /* encima del header (z-index: 100) */
+  padding: 20px;
+  gap: 16px;
+  overflow-y: auto; /* scroll si hay muchos productos */
 }
-.cart-panel.open .cart-drawer { transform: translateX(0); }
 
-.cart-header {
+/* Cuando .oculto se quita, el carrito aparece. Cuando se agrega, desaparece. */
+
+#panel-carrito h2 {
+  font-size: 1.2rem;
+  border-bottom: 1px solid var(--borde);
+  padding-bottom: 12px;
+}
+
+/* Lista de items del carrito */
+#lista-carrito {
+  list-style: none;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--border);
-}
-.cart-header h2 { font-size: 1.1rem; font-weight: 700; }
-
-/* ---------- cart items ---------- */
-.cart-items {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px 0;
-}
-.cart-items::-webkit-scrollbar { width: 4px; }
-.cart-items::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 2px; }
-
-.cart-item {
-  display: grid;
-  grid-template-columns: 60px 1fr;
+  flex-direction: column;
   gap: 14px;
-  padding: 14px 24px;
-  border-bottom: 1px solid var(--border);
+  flex: 1; /* ocupa el espacio disponible */
+}
+
+/* Cada ítem del carrito */
+.item-carrito {
+  display: grid;
+  grid-template-columns: 54px 1fr; /* imagen chica | info */
+  gap: 12px;
   align-items: start;
+  border-bottom: 1px solid var(--borde);
+  padding-bottom: 14px;
 }
-.cart-item__img {
-  width: 60px; height: 60px;
-  background: #fff;
-  border-radius: var(--radius-sm);
+
+.item-carrito img {
+  width: 54px;
+  height: 54px;
   object-fit: contain;
-  padding: 6px;
+  background: white;
+  border-radius: 6px;
+  padding: 4px;
 }
-.cart-item__info { display: flex; flex-direction: column; gap: 6px; }
-.cart-item__name {
-  font-size: .82rem;
-  font-weight: 500;
-  color: var(--text-1);
+
+.item-carrito .nombre-item {
+  font-size: 0.8rem;
+  color: var(--texto-principal);
   line-height: 1.4;
+  /* Limita a 2 líneas */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.cart-item__price {
-  font-family: var(--font-mono);
-  font-size: .8rem;
-  color: var(--text-2);
-}
-.cart-item__subtotal {
-  font-family: var(--font-mono);
-  font-size: .85rem;
-  font-weight: 700;
-  color: var(--accent);
-}
-.cart-item__controls {
+
+/* Fila con botones de cantidad y subtotal */
+.item-carrito .controles-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 2px;
+  margin-top: 6px;
+  flex-wrap: wrap;
 }
-.qty-btn {
-  width: 26px; height: 26px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--bg-3);
-  color: var(--text-1);
+
+/* Botones de + y - de cantidad */
+.btn-cantidad {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%; /* círculo */
+  padding: 0;
   font-size: 1rem;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: background .15s;
 }
-.qty-btn:hover { background: var(--accent); border-color: var(--accent); }
-.qty-display {
-  font-family: var(--font-mono);
-  font-size: .85rem;
+
+.cantidad-display {
+  font-size: 0.9rem;
+  font-weight: bold;
   min-width: 20px;
   text-align: center;
-  color: var(--text-1);
 }
-.remove-btn {
-  margin-left: auto;
-  background: transparent;
-  border: none;
-  color: var(--text-3);
-  cursor: pointer;
-  font-size: .9rem;
-  padding: 2px 4px;
-  transition: color .15s;
-}
-.remove-btn:hover { color: var(--danger); }
 
-/* ---------- cart footer ---------- */
-.cart-footer {
-  padding: 20px 24px;
-  border-top: 1px solid var(--border);
+.subtotal-item {
+  color: var(--acento);
+  font-weight: bold;
+  font-size: 0.85rem;
+}
+
+/* Botón de eliminar (✕) */
+.btn-eliminar {
+  background: transparent;
+  color: var(--texto-suave);
+  border: none;
+  font-size: 0.85rem;
+  padding: 2px 6px;
+  margin-left: auto;
+  cursor: pointer;
+}
+.btn-eliminar:hover {
+  color: var(--error);
+  background: transparent;
+}
+
+/* Pie del carrito: total y botones */
+#pie-carrito {
+  border-top: 1px solid var(--borde);
+  padding-top: 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
-.cart-total {
+
+#pie-carrito p {
+  font-size: 1rem;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  font-size: .9rem;
-  color: var(--text-2);
-}
-.cart-total strong {
-  font-family: var(--font-mono);
-  font-size: 1.25rem;
-  color: var(--text-1);
 }
 
-/* ============================================================
-   FOOTER
-   ============================================================ */
-.site-footer {
-  border-top: 1px solid var(--border);
-  padding: 28px 0;
-  color: var(--text-3);
-  font-size: .82rem;
+#total-carrito {
+  font-size: 1.2rem;
+  color: var(--texto-principal);
+}
+
+
+/* ----------------------------------------------------------
+   14. FOOTER
+---------------------------------------------------------- */
+footer {
   text-align: center;
+  padding: 28px;
+  border-top: 1px solid var(--borde);
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  margin-top: 40px;
 }
-.site-footer a { color: var(--text-3); }
-.site-footer a:hover { color: var(--accent); }
 
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
+footer a {
+  color: var(--texto-suave);
+}
+footer a:hover {
+  color: var(--acento);
+}
+
+
+/* ----------------------------------------------------------
+   15. RESPONSIVE BÁSICO
+   ----------------------------------------------------------
+   @media hace que estos estilos solo apliquen cuando la pantalla
+   es más angosta que 640px (típicamente celulares).
+---------------------------------------------------------- */
 @media (max-width: 640px) {
-  .header-inner { gap: 16px; }
-  .site-nav { display: none; }
-  .catalog-header { flex-direction: column; align-items: flex-start; }
-  #search-input { width: 100%; }
-  .profile-card { flex-direction: column; text-align: center; }
-  .profile-details li { justify-content: center; }
-  .login-card { padding: 32px 24px; }
-}
+  header {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  nav { display: none; } /* ocultamos nav en celular para simplificar */
+
+  #panel-carrito {
+    width: 100%; /* el carrito ocupa toda la pantalla en celular */
+  }
+
+  section {
+    padding: 32px 16px;
+  }
+
+  #buscador {
+    width: 100%;
+  }
 }

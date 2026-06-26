@@ -1,429 +1,633 @@
 /* ============================================================
    NightShop — script.js
-   Login · Perfil · Catálogo · Búsqueda/Filtros · Carrito
+   Versión simplificada con comentarios explicativos
    ============================================================ */
 
 "use strict";
+/*
+  "use strict" activa el modo estricto de JavaScript.
+  Esto hace que JS sea más exigente: te avisa de errores que
+  normalmente ignoraría silenciosamente (como usar variables
+  sin declarar). Es una buena práctica siempre incluirlo.
+*/
 
-/* ---------------------------------------------------------- */
-/* CONSTANTES                                                  */
-/* ---------------------------------------------------------- */
-const API_BASE   = "https://fakestoreapi.com";
-const TOKEN_KEY  = "ns_token";
-const CART_KEY   = "ns_cart";
 
-/* ---------------------------------------------------------- */
-/* ESTADO                                                      */
-/* ---------------------------------------------------------- */
-let allProducts  = [];   // todos los productos cargados
-let cart         = [];   // array de objetos { id, title, price, image, qty }
+/* ----------------------------------------------------------
+   CONSTANTES GLOBALES
+   ----------------------------------------------------------
+   Las constantes son valores que no cambian nunca.
+   Las ponemos arriba para que sean fáciles de encontrar y
+   modificar si cambia la URL de la API, por ejemplo.
+---------------------------------------------------------- */
+const URL_API    = "https://fakestoreapi.com"; // base de todos los endpoints
+const CLAVE_TOKEN   = "ns_token";  // nombre de la clave en localStorage para el token
+const CLAVE_CARRITO = "ns_carrito"; // nombre de la clave en localStorage para el carrito
 
-/* ---------------------------------------------------------- */
-/* HELPERS DE DOM                                             */
-/* ---------------------------------------------------------- */
-const $  = (sel, ctx = document) => ctx.querySelector(sel);
-const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
 
-function show(el)  { el.classList.remove("hidden"); }
-function hide(el)  { el.classList.add("hidden"); }
-
-/* ---------------------------------------------------------- */
-/* BOOTSTRAP                                                   */
-/* ---------------------------------------------------------- */
-document.addEventListener("DOMContentLoaded", () => {
-  const token = localStorage.getItem(TOKEN_KEY);
-  if (token) {
-    showStore();
-    loadProfile();
-    loadCatalog();
+/* ----------------------------------------------------------
+   VARIABLES GLOBALES DE ESTADO
+   ----------------------------------------------------------
+   Estas variables guardan el "estado" de la aplicación.
+   Toda la lógica las lee y modifica según las acciones del usuario.
+---------------------------------------------------------- */
+let todosLosProductos = []; // array con TODOS los productos que trajo la API
+let carrito = [];
+/*
+  El carrito es un array de objetos. Cada objeto tiene esta forma:
+  {
+    id:     1,
+    titulo: "Nombre del producto",
+    precio: 29.99,
+    imagen: "https://...",
+    cantidad: 2
   }
+*/
 
-  // Cargar carrito guardado
-  loadCartFromStorage();
 
-  // ---- Eventos Login ----
-  $("#login-btn").addEventListener("click", handleLogin);
-  $("input#username").addEventListener("keydown", e => { if (e.key === "Enter") handleLogin(); });
-  $("input#password").addEventListener("keydown", e => { if (e.key === "Enter") handleLogin(); });
+/* ----------------------------------------------------------
+   PUNTO DE ENTRADA: DOMContentLoaded
+   ----------------------------------------------------------
+   Este evento se dispara cuando el navegador terminó de leer
+   y construir todo el HTML. Recién ahí podemos buscar elementos
+   del DOM con getElementById, etc.
 
-  // ---- Eventos Logout ----
-  $("#logout-btn").addEventListener("click", handleLogout);
+   Si intentáramos acceder a elementos antes de este evento,
+   obtendrías "null" porque el HTML todavía no fue procesado.
+---------------------------------------------------------- */
+document.addEventListener("DOMContentLoaded", function () {
 
-  // ---- Eventos Carrito ----
-  $("#cart-toggle-btn").addEventListener("click", openCart);
-  $("#cart-close-btn").addEventListener("click", closeCart);
-  $("#cart-overlay").addEventListener("click", closeCart);
-  $("#cart-clear-btn").addEventListener("click", clearCart);
+  // Chequeamos si ya hay un token guardado de una sesión anterior
+  const tokenGuardado = localStorage.getItem(CLAVE_TOKEN);
 
-  // ---- Búsqueda / Filtro ----
-  $("#search-input").addEventListener("input", filterProducts);
-  $("#category-filter").addEventListener("change", filterProducts);
+  if (tokenGuardado) {
+    // Si hay token, el usuario ya inició sesión antes → mostramos la tienda directo
+    mostrarTienda();
+    cargarPerfil();
+    cargarCatalogo();
+  }
+  // Si no hay token, el login ya está visible por defecto en el HTML
+
+  // Cargamos el carrito que puede haber quedado guardado en localStorage
+  cargarCarritoDeStorage();
 });
 
-/* ---------------------------------------------------------- */
-/* LOGIN                                                       */
-/* ---------------------------------------------------------- */
-async function handleLogin() {
-  const username  = $("#username").value.trim();
-  const password  = $("#password").value.trim();
-  const errorBox  = $("#login-error");
-  const btnText   = $("#login-btn-text");
-  const spinner   = $("#login-spinner");
 
-  hide(errorBox);
+/* ============================================================
+   LOGIN Y SESIÓN
+   ============================================================ */
 
-  if (!username || !password) {
-    showError(errorBox, "Por favor completá usuario y contraseña.");
-    return;
+/*
+  iniciarSesion() — se llama desde el onclick del botón "Entrar".
+
+  Flujo:
+  1. Leemos usuario y contraseña del HTML
+  2. Validamos que no estén vacíos
+  3. Hacemos un POST a la API con fetch
+  4. Si la API responde OK, guardamos el token y mostramos la tienda
+  5. Si hay error, mostramos el mensaje de error
+*/
+async function iniciarSesion() {
+  /*
+    "async" convierte esta función en asíncrona.
+    Eso nos permite usar "await" adentro, que pausa la ejecución
+    hasta que una operación lenta (como fetch) termine.
+    Sin async/await, necesitaríamos callbacks o .then() encadenados.
+  */
+
+  // Leemos los valores de los campos del HTML
+  const usuario    = document.getElementById("campo-usuario").value.trim();
+  const contrasena = document.getElementById("campo-contrasena").value.trim();
+  const cajError   = document.getElementById("login-error");
+
+  // Ocultamos error anterior
+  cajError.classList.add("oculto");
+
+  // Validación básica antes de llamar a la API
+  if (!usuario || !contrasena) {
+    cajError.textContent = "Completá usuario y contraseña.";
+    cajError.classList.remove("oculto");
+    return; // "return" corta la función acá, no sigue ejecutando
   }
 
-  // Estado de carga
-  btnText.textContent = "Ingresando…";
-  show(spinner);
-  $("#login-btn").disabled = true;
-
   try {
-    const res = await fetch(`${API_BASE}/auth/login`, {
+    /*
+      fetch() hace una petición HTTP.
+      Por defecto hace GET. Para POST necesitamos el segundo argumento
+      con method, headers y body.
+
+      El body debe ser un string JSON, por eso usamos JSON.stringify().
+    */
+    const respuesta = await fetch(URL_API + "/auth/login", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
+      headers: {
+        "Content-Type": "application/json" // le decimos a la API que mandamos JSON
+      },
+      body: JSON.stringify({ username: usuario, password: contrasena })
     });
 
-    if (!res.ok) throw new Error("Credenciales incorrectas.");
+    // respuesta.ok es true si el código HTTP es 200-299
+    if (!respuesta.ok) {
+      throw new Error("Usuario o contraseña incorrectos.");
+      // throw "lanza" un error que es capturado por el bloque catch de abajo
+    }
 
-    const data = await res.json();
-    localStorage.setItem(TOKEN_KEY, data.token);
+    // Convertimos la respuesta a objeto JavaScript
+    const datos = await respuesta.json();
+    /*
+      datos.token es el token JWT que devuelve la API.
+      Lo guardamos en localStorage para que persista al recargar la página.
+      localStorage guarda strings, así que el token (que ya es un string) entra directo.
+    */
+    localStorage.setItem(CLAVE_TOKEN, datos.token);
 
-    showStore();
-    loadProfile();
-    loadCatalog();
-  } catch (err) {
-    showError(errorBox, err.message || "Error al conectar con el servidor.");
-  } finally {
-    btnText.textContent = "Iniciar sesión";
-    hide(spinner);
-    $("#login-btn").disabled = false;
+    // Mostramos la tienda y cargamos datos
+    mostrarTienda();
+    cargarPerfil();
+    cargarCatalogo();
+
+  } catch (error) {
+    /*
+      catch atrapa cualquier error:
+      - errores de red (sin internet)
+      - el throw que hicimos arriba
+      - errores de JSON.parse
+    */
+    cajError.textContent = error.message;
+    cajError.classList.remove("oculto");
   }
 }
 
-function showStore() {
-  hide($("#login-section"));
-  show($("#store-section"));
+
+/*
+  mostrarTienda() — oculta el login y muestra la sección de la tienda.
+  classList.add / classList.remove manipulan las clases CSS de un elemento.
+*/
+function mostrarTienda() {
+  document.getElementById("login-section").classList.add("oculto");
+  document.getElementById("tienda-section").classList.remove("oculto");
 }
 
-function showLogin() {
-  show($("#login-section"));
-  hide($("#store-section"));
+
+/*
+  cerrarSesion() — se llama desde el onclick del botón "Cerrar sesión".
+  Borra el token y vuelve a mostrar el login.
+*/
+function cerrarSesion() {
+  localStorage.removeItem(CLAVE_TOKEN); // borramos el token guardado
+  document.getElementById("tienda-section").classList.add("oculto");
+  document.getElementById("login-section").classList.remove("oculto");
+  // Limpiamos los campos por seguridad
+  document.getElementById("campo-usuario").value = "";
+  document.getElementById("campo-contrasena").value = "";
 }
 
-function handleLogout() {
-  localStorage.removeItem(TOKEN_KEY);
-  showLogin();
-  // Limpiar UI
-  $("#username").value = "";
-  $("#password").value = "";
-  hide($("#login-error"));
-}
 
-/* ---------------------------------------------------------- */
-/* PERFIL                                                      */
-/* ---------------------------------------------------------- */
-async function loadProfile() {
-  const loading  = $("#profile-loading");
-  const card     = $("#profile-card");
-  const errorBox = $("#profile-error");
+/* ============================================================
+   PERFIL DE USUARIO
+   ============================================================ */
 
-  show(loading);
-  hide(card);
-  hide(errorBox);
+/*
+  cargarPerfil() — trae los datos del usuario desde la API y los muestra.
+
+  Usamos /users/1 porque la Fake Store API tiene un usuario de prueba
+  con ID 1 que coincide con las credenciales johnd.
+*/
+async function cargarPerfil() {
+  const elCargando = document.getElementById("perfil-cargando");
+  const laTarjeta  = document.getElementById("tarjeta-perfil");
+  const elError    = document.getElementById("perfil-error");
+
+  // Mostramos "cargando" y ocultamos lo demás
+  elCargando.classList.remove("oculto");
+  laTarjeta.classList.add("oculto");
+  elError.classList.add("oculto");
 
   try {
-    const res = await fetch(`${API_BASE}/users/1`);
-    if (!res.ok) throw new Error("No se pudo cargar el perfil.");
-    const u = await res.json();
+    const respuesta = await fetch(URL_API + "/users/1");
+    if (!respuesta.ok) throw new Error("Error al cargar perfil.");
 
-    const fullName = `${capitalize(u.name.firstname)} ${capitalize(u.name.lastname)}`;
-    const initials = (u.name.firstname[0] + u.name.lastname[0]).toUpperCase();
+    const usuario = await respuesta.json();
+    /*
+      La API devuelve un objeto como este:
+      {
+        id: 1,
+        email: "john@gmail.com",
+        username: "johnd",
+        password: "...",
+        name: { firstname: "john", lastname: "doe" },
+        phone: "1-570-236-7033",
+        ...
+      }
+    */
 
-    $("#profile-initials").textContent = initials;
-    $("#profile-name").textContent     = fullName;
-    $("#profile-username").textContent = u.username;
-    $("#profile-email").textContent    = u.email;
-    $("#profile-phone").textContent    = u.phone;
+    // Armamos el nombre completo capitalizando la primera letra
+    const nombreCompleto =
+      capitalizar(usuario.name.firstname) + " " + capitalizar(usuario.name.lastname);
 
-    hide(loading);
-    show(card);
-  } catch (err) {
-    hide(loading);
-    showError(errorBox, "No se pudo cargar el perfil de usuario.");
+    // Escribimos los datos en el HTML usando textContent
+    // (textContent es más seguro que innerHTML para datos de la API)
+    document.getElementById("perfil-nombre").textContent   = nombreCompleto;
+    document.getElementById("perfil-usuario").textContent  = usuario.username;
+    document.getElementById("perfil-email").textContent    = usuario.email;
+    document.getElementById("perfil-telefono").textContent = usuario.phone;
+
+    // Ocultamos "cargando" y mostramos la tarjeta con los datos
+    elCargando.classList.add("oculto");
+    laTarjeta.classList.remove("oculto");
+
+  } catch (error) {
+    elCargando.classList.add("oculto");
+    elError.classList.remove("oculto");
   }
 }
 
-/* ---------------------------------------------------------- */
-/* CATÁLOGO                                                    */
-/* ---------------------------------------------------------- */
-async function loadCatalog() {
-  const loading  = $("#catalog-loading");
-  const errorBox = $("#catalog-error");
 
-  show(loading);
-  hide(errorBox);
-  hide($("#no-results"));
+/* ============================================================
+   CATÁLOGO DE PRODUCTOS
+   ============================================================ */
+
+/*
+  cargarCatalogo() — trae productos y categorías de la API.
+
+  Usamos Promise.all para hacer las dos peticiones en paralelo
+  en lugar de una después de la otra. Esto lo hace más rápido.
+*/
+async function cargarCatalogo() {
+  const elCargando = document.getElementById("catalogo-cargando");
+  const elError    = document.getElementById("catalogo-error");
+
+  elCargando.classList.remove("oculto");
+  elError.classList.add("oculto");
 
   try {
-    // Productos y categorías en paralelo
-    const [prodRes, catRes] = await Promise.all([
-      fetch(`${API_BASE}/products`),
-      fetch(`${API_BASE}/products/categories`),
+    /*
+      Promise.all recibe un array de promesas y espera a que TODAS terminen.
+      Devuelve un array con los resultados en el mismo orden.
+      Si cualquiera falla, el catch lo atrapa.
+    */
+    const [respProductos, respCategorias] = await Promise.all([
+      fetch(URL_API + "/products"),
+      fetch(URL_API + "/products/categories")
     ]);
 
-    if (!prodRes.ok || !catRes.ok) throw new Error("Error al cargar datos.");
+    if (!respProductos.ok || !respCategorias.ok) {
+      throw new Error("Error al cargar datos.");
+    }
 
-    allProducts = await prodRes.json();
-    const categories = await catRes.json();
+    // Convertimos ambas respuestas a objetos JS
+    todosLosProductos = await respProductos.json();
+    const categorias  = await respCategorias.json();
+    /*
+      categorias es un array simple de strings:
+      ["electronics", "jewelery", "men's clothing", "women's clothing"]
+    */
 
-    buildCategoryFilter(categories);
-    renderProducts(allProducts);
+    // Construimos el dropdown de categorías con los datos de la API
+    construirFiltroCategoria(categorias);
 
-    hide(loading);
-  } catch (err) {
-    hide(loading);
-    showError(errorBox, "No se pudieron cargar los productos. Intentá recargar la página.");
+    // Mostramos todos los productos
+    mostrarProductos(todosLosProductos);
+
+    elCargando.classList.add("oculto");
+
+  } catch (error) {
+    elCargando.classList.add("oculto");
+    elError.classList.remove("oculto");
   }
 }
 
-function buildCategoryFilter(categories) {
-  const select = $("#category-filter");
-  // Limpiar opciones excepto la primera
-  while (select.options.length > 1) select.remove(1);
 
-  categories.forEach(cat => {
-    const opt = document.createElement("option");
-    opt.value = cat;
-    opt.textContent = capitalize(cat);
-    select.appendChild(opt);
+/*
+  construirFiltroCategoria() — genera dinámicamente los <option> del <select>.
+  Recibe un array de strings (los nombres de las categorías).
+*/
+function construirFiltroCategoria(categorias) {
+  const select = document.getElementById("filtro-categoria");
+
+  // Para cada categoría de la API, creamos un <option> y lo agregamos al <select>
+  categorias.forEach(function (cat) {
+    const opcion = document.createElement("option");
+    opcion.value       = cat;       // el valor que usamos para filtrar
+    opcion.textContent = capitalizar(cat); // el texto que ve el usuario
+    select.appendChild(opcion); // lo agregamos al final del <select>
   });
 }
 
-function renderProducts(products) {
-  const grid      = $("#products-grid");
-  const noResults = $("#no-results");
 
-  grid.innerHTML = "";
+/*
+  mostrarProductos() — genera el HTML de las tarjetas de productos.
+  Recibe un array de productos (puede ser todos o un subconjunto filtrado).
+*/
+function mostrarProductos(productos) {
+  const grilla        = document.getElementById("grilla-productos");
+  const sinResultados = document.getElementById("sin-resultados");
 
-  if (products.length === 0) {
-    show(noResults);
-    return;
+  // Borramos las tarjetas anteriores antes de dibujar las nuevas
+  grilla.innerHTML = "";
+
+  // Si no hay productos, mostramos el mensaje "sin resultados"
+  if (productos.length === 0) {
+    sinResultados.classList.remove("oculto");
+    return; // salimos de la función, no hay nada más que hacer
   }
-  hide(noResults);
+  sinResultados.classList.add("oculto");
 
-  products.forEach(p => {
-    const article = document.createElement("article");
-    article.className = "product-card";
-    article.setAttribute("role", "listitem");
-    article.setAttribute("aria-label", p.title);
-    article.innerHTML = `
-      <div class="product-card__img-wrap">
-        <img src="${p.image}" alt="${escapeHtml(p.title)}" loading="lazy" />
+  /*
+    Para cada producto creamos un elemento article del DOM
+    y lo insertamos en la grilla.
+
+    Usamos article porque es un elemento semántico apropiado
+    para un bloque de contenido independiente y reutilizable.
+  */
+  productos.forEach(function (producto) {
+    const articulo = document.createElement("article");
+    articulo.className = "tarjeta-producto";
+
+    /*
+      innerHTML nos permite escribir HTML directamente como string.
+      Usamos template literals (backticks) para interpolar variables con ${}.
+      
+      IMPORTANTE: en producción real habría que sanitizar los datos
+      de la API para evitar ataques XSS. Para este proyecto académico está bien.
+    */
+    articulo.innerHTML = `
+      <div class="imagen-wrap">
+        <img src="${producto.image}" alt="${producto.title}" loading="lazy" />
       </div>
-      <div class="product-card__body">
-        <span class="product-card__category">${escapeHtml(p.category)}</span>
-        <h3 class="product-card__name">${escapeHtml(p.title)}</h3>
-        <p class="product-card__price">$${p.price.toFixed(2)}</p>
+      <div class="info">
+        <span class="categoria">${producto.category}</span>
+        <p class="nombre">${producto.title}</p>
+        <p class="precio">$${producto.price.toFixed(2)}</p>
       </div>
-      <div class="product-card__footer">
-        <button class="btn btn--primary btn--full add-to-cart-btn"
-          data-id="${p.id}"
-          data-title="${escapeHtml(p.title)}"
-          data-price="${p.price}"
-          data-image="${p.image}"
-          aria-label="Agregar ${escapeHtml(p.title)} al carrito">
+      <div class="footer-tarjeta">
+        <button onclick="agregarAlCarrito(${producto.id})">
           + Agregar al carrito
         </button>
       </div>
     `;
-    grid.appendChild(article);
-  });
+    /*
+      Nota sobre producto.price.toFixed(2):
+      toFixed(2) convierte el número a string con exactamente 2 decimales.
+      Ejemplo: 9.9 → "9.90"  |  12.345 → "12.35"
+    */
 
-  // Delegar eventos en el grid (más eficiente)
-  grid.addEventListener("click", onAddToCart);
+    grilla.appendChild(articulo); // añadimos la tarjeta al DOM
+  });
 }
 
-function filterProducts() {
-  const query    = $("#search-input").value.toLowerCase().trim();
-  const category = $("#category-filter").value;
 
-  const filtered = allProducts.filter(p => {
-    const matchSearch   = !query    || p.title.toLowerCase().includes(query);
-    const matchCategory = !category || p.category === category;
-    return matchSearch && matchCategory;
+/*
+  filtrarProductos() — se llama cuando el usuario escribe en el buscador
+  o cambia la categoría seleccionada.
+
+  Lee los valores actuales de los controles y filtra el array
+  todosLosProductos (que siempre tiene todos los productos originales).
+*/
+function filtrarProductos() {
+  const textoBusqueda = document.getElementById("buscador").value.toLowerCase().trim();
+  const categoriaElegida = document.getElementById("filtro-categoria").value;
+
+  /*
+    Array.filter() devuelve un NUEVO array con los elementos
+    que pasan la condición. No modifica el array original.
+
+    Para cada producto, chequeamos DOS condiciones:
+    1. ¿El nombre incluye el texto buscado?
+    2. ¿La categoría coincide con el filtro?
+
+    Si no hay texto o no hay categoría elegida, la condición es true
+    (no filtra nada en esa dimensión).
+  */
+  const productosFiltrados = todosLosProductos.filter(function (producto) {
+    const coincideBusqueda  = !textoBusqueda    || producto.title.toLowerCase().includes(textoBusqueda);
+    const coincideCategoria = !categoriaElegida || producto.category === categoriaElegida;
+    return coincideBusqueda && coincideCategoria;
   });
 
-  renderProducts(filtered);
+  // Mostramos solo los productos que pasaron el filtro
+  mostrarProductos(productosFiltrados);
 }
 
-/* ---------------------------------------------------------- */
-/* CARRITO                                                     */
-/* ---------------------------------------------------------- */
-function loadCartFromStorage() {
+
+/* ============================================================
+   CARRITO DE COMPRAS
+   ============================================================ */
+
+/*
+  cargarCarritoDeStorage() — recupera el carrito guardado en localStorage.
+  Se llama al inicio para restaurar el carrito de la sesión anterior.
+*/
+function cargarCarritoDeStorage() {
   try {
-    const stored = localStorage.getItem(CART_KEY);
-    cart = stored ? JSON.parse(stored) : [];
-  } catch {
-    cart = [];
+    const carritoGuardado = localStorage.getItem(CLAVE_CARRITO);
+    /*
+      localStorage solo guarda strings. Entonces:
+      - Para guardar: JSON.stringify(array) → convierte array a string
+      - Para recuperar: JSON.parse(string)  → convierte string a array
+    */
+    carrito = carritoGuardado ? JSON.parse(carritoGuardado) : [];
+  } catch (e) {
+    // Si el JSON está corrupto por alguna razón, empezamos con carrito vacío
+    carrito = [];
   }
-  updateCartUI();
+  actualizarInterfazCarrito(); // reflejamos en pantalla lo que cargamos
 }
 
-function saveCartToStorage() {
-  localStorage.setItem(CART_KEY, JSON.stringify(cart));
+
+/*
+  guardarCarritoEnStorage() — guarda el array carrito en localStorage.
+  Se llama cada vez que el carrito cambia.
+*/
+function guardarCarritoEnStorage() {
+  localStorage.setItem(CLAVE_CARRITO, JSON.stringify(carrito));
 }
 
-/* Agrega producto o incrementa cantidad */
-function onAddToCart(e) {
-  const btn = e.target.closest(".add-to-cart-btn");
-  if (!btn) return;
 
-  const id    = Number(btn.dataset.id);
-  const title = btn.dataset.title;
-  const price = parseFloat(btn.dataset.price);
-  const image = btn.dataset.image;
+/*
+  agregarAlCarrito() — se llama desde el onclick de cada tarjeta de producto.
+  Recibe el ID del producto y busca el objeto completo en todosLosProductos.
+*/
+function agregarAlCarrito(idProducto) {
+  /*
+    Array.find() devuelve el PRIMER elemento que cumple la condición,
+    o undefined si no encuentra ninguno.
+  */
+  const producto = todosLosProductos.find(function (p) {
+    return p.id === idProducto;
+  });
 
-  const existing = cart.find(item => item.id === id);
-  if (existing) {
-    existing.qty++;
+  if (!producto) return; // por seguridad, aunque no debería pasar
+
+  /*
+    Buscamos si ese producto ya está en el carrito.
+    Si está, incrementamos la cantidad.
+    Si no está, lo agregamos como nuevo objeto.
+  */
+  const itemExistente = carrito.find(function (item) {
+    return item.id === idProducto;
+  });
+
+  if (itemExistente) {
+    // Ya está en el carrito → solo sumamos 1 a la cantidad
+    itemExistente.cantidad++;
   } else {
-    cart.push({ id, title, price, image, qty: 1 });
+    // No está → lo agregamos como nuevo item al array
+    carrito.push({
+      id:       producto.id,
+      titulo:   producto.title,
+      precio:   producto.price,
+      imagen:   producto.image,
+      cantidad: 1
+    });
+    /*
+      Array.push() agrega un elemento al FINAL del array.
+      Es uno de los métodos más comunes para agregar a arrays.
+    */
   }
 
-  saveCartToStorage();
-  updateCartUI();
-  flashBtn(btn);
+  guardarCarritoEnStorage();   // persistimos el cambio
+  actualizarInterfazCarrito(); // actualizamos lo visual
 }
 
-function updateCartUI() {
-  // Conteo en header
-  const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
-  $("#cart-count").textContent = totalQty;
 
-  // Lista
-  const listEl   = $("#cart-items");
-  const emptyEl  = $("#cart-empty");
-  const footerEl = $("#cart-footer");
+/*
+  cambiarCantidad() — aumenta o disminuye la cantidad de un producto.
+  Recibe el id del producto y la dirección (+1 o -1).
+*/
+function cambiarCantidad(idProducto, direccion) {
+  const item = carrito.find(function (i) { return i.id === idProducto; });
+  if (!item) return;
 
-  listEl.innerHTML = "";
+  item.cantidad += direccion; // suma o resta 1
 
-  if (cart.length === 0) {
-    show(emptyEl);
-    hide(footerEl);
+  // Si la cantidad llega a 0, eliminamos el producto del carrito
+  if (item.cantidad <= 0) {
+    eliminarDelCarrito(idProducto);
+    return; // ya no necesitamos seguir
+  }
+
+  guardarCarritoEnStorage();
+  actualizarInterfazCarrito();
+}
+
+
+/*
+  eliminarDelCarrito() — quita completamente un producto del carrito.
+  Array.filter() crea un nuevo array SIN el elemento que queremos borrar.
+*/
+function eliminarDelCarrito(idProducto) {
+  carrito = carrito.filter(function (item) {
+    return item.id !== idProducto; // mantenemos todos MENOS el que queremos borrar
+  });
+  guardarCarritoEnStorage();
+  actualizarInterfazCarrito();
+}
+
+
+/*
+  vaciarCarrito() — borra todos los productos del carrito.
+*/
+function vaciarCarrito() {
+  carrito = []; // simplemente reemplazamos por un array vacío
+  guardarCarritoEnStorage();
+  actualizarInterfazCarrito();
+}
+
+
+/*
+  actualizarInterfazCarrito() — redibuja TODO el carrito en pantalla.
+  Se llama después de cualquier cambio en el array carrito.
+*/
+function actualizarInterfazCarrito() {
+  const listaEl   = document.getElementById("lista-carrito");
+  const vacioEl   = document.getElementById("carrito-vacio");
+  const pieEl     = document.getElementById("pie-carrito");
+  const contadorEl= document.getElementById("contador-carrito");
+
+  // Calculamos la cantidad total de items (sumando todas las cantidades)
+  const cantidadTotal = carrito.reduce(function (acumulador, item) {
+    return acumulador + item.cantidad;
+  }, 0);
+  /*
+    Array.reduce() recorre el array y va acumulando un valor.
+    Empieza con 0 (el segundo argumento) y por cada item suma su cantidad.
+    Ejemplo: [{cantidad:2}, {cantidad:3}] → 0 + 2 + 3 = 5
+  */
+
+  // Mostramos el contador en el botón del header
+  contadorEl.textContent = cantidadTotal;
+
+  // Limpiamos la lista antes de redibujar
+  listaEl.innerHTML = "";
+
+  if (carrito.length === 0) {
+    // Carrito vacío: mostramos mensaje y ocultamos el pie
+    vacioEl.classList.remove("oculto");
+    pieEl.classList.add("oculto");
     return;
   }
 
-  hide(emptyEl);
-  show(footerEl);
+  // Hay productos: ocultamos el mensaje y mostramos el pie
+  vacioEl.classList.add("oculto");
+  pieEl.classList.remove("oculto");
 
-  cart.forEach(item => {
-    const subtotal = (item.price * item.qty).toFixed(2);
+  // Generamos un <li> por cada producto en el carrito
+  carrito.forEach(function (item) {
+    const subtotal = (item.precio * item.cantidad).toFixed(2);
+
     const li = document.createElement("li");
-    li.className = "cart-item";
-    li.dataset.id = item.id;
+    li.className = "item-carrito";
     li.innerHTML = `
-      <img class="cart-item__img" src="${item.image}" alt="${escapeHtml(item.title)}" />
-      <div class="cart-item__info">
-        <p class="cart-item__name">${escapeHtml(item.title)}</p>
-        <p class="cart-item__price">$${item.price.toFixed(2)} / u</p>
-        <div class="cart-item__controls">
-          <button class="qty-btn" data-action="dec" data-id="${item.id}" aria-label="Quitar uno">−</button>
-          <span class="qty-display" aria-label="Cantidad: ${item.qty}">${item.qty}</span>
-          <button class="qty-btn" data-action="inc" data-id="${item.id}" aria-label="Agregar uno">+</button>
-          <span class="cart-item__subtotal">$${subtotal}</span>
-          <button class="remove-btn" data-action="remove" data-id="${item.id}" aria-label="Eliminar producto">✕</button>
+      <img src="${item.imagen}" alt="${item.titulo}" />
+      <div>
+        <p class="nombre-item">${item.titulo}</p>
+        <div class="controles-item">
+          <button class="btn-cantidad" onclick="cambiarCantidad(${item.id}, -1)">−</button>
+          <span class="cantidad-display">${item.cantidad}</span>
+          <button class="btn-cantidad" onclick="cambiarCantidad(${item.id}, +1)">+</button>
+          <span class="subtotal-item">$${subtotal}</span>
+          <button class="btn-eliminar" onclick="eliminarDelCarrito(${item.id})">✕</button>
         </div>
       </div>
     `;
-    listEl.appendChild(li);
+    listaEl.appendChild(li);
   });
 
-  // Total
-  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-  $("#cart-total").textContent = `$${total.toFixed(2)}`;
+  // Calculamos y mostramos el total general
+  const total = carrito.reduce(function (acum, item) {
+    return acum + item.precio * item.cantidad;
+  }, 0);
 
-  // Eventos de la lista
-  listEl.addEventListener("click", onCartAction);
+  document.getElementById("total-carrito").textContent = "$" + total.toFixed(2);
 }
 
-function onCartAction(e) {
-  const btn = e.target.closest("[data-action]");
-  if (!btn) return;
 
-  const action = btn.dataset.action;
-  const id     = Number(btn.dataset.id);
-  const item   = cart.find(i => i.id === id);
-  if (!item) return;
-
-  if (action === "inc") {
-    item.qty++;
-  } else if (action === "dec") {
-    item.qty--;
-    if (item.qty <= 0) cart = cart.filter(i => i.id !== id);
-  } else if (action === "remove") {
-    cart = cart.filter(i => i.id !== id);
-  }
-
-  saveCartToStorage();
-  updateCartUI();
+/*
+  abrirCarrito() / cerrarCarrito() — muestran y ocultan el panel aside.
+*/
+function abrirCarrito() {
+  document.getElementById("panel-carrito").classList.remove("oculto");
 }
 
-function clearCart() {
-  cart = [];
-  saveCartToStorage();
-  updateCartUI();
+function cerrarCarrito() {
+  document.getElementById("panel-carrito").classList.add("oculto");
 }
 
-function openCart() {
-  const panel = $("#cart-panel");
-  panel.classList.add("open");
-  panel.setAttribute("aria-hidden", "false");
-  document.body.style.overflow = "hidden";
-}
 
-function closeCart() {
-  const panel = $("#cart-panel");
-  panel.classList.remove("open");
-  panel.setAttribute("aria-hidden", "true");
-  document.body.style.overflow = "";
-}
+/* ============================================================
+   FUNCIONES UTILITARIAS
+   ============================================================ */
 
-/* ---------------------------------------------------------- */
-/* UTILIDADES                                                  */
-/* ---------------------------------------------------------- */
-function showError(el, msg) {
-  el.textContent = msg;
-  show(el);
-}
-
-function capitalize(str) {
-  return str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
-}
-
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-// Feedback visual al agregar al carrito
-function flashBtn(btn) {
-  const original = btn.textContent;
-  btn.textContent = "✓ Agregado";
-  btn.style.background = "var(--success)";
-  btn.disabled = true;
-  setTimeout(() => {
-    btn.textContent = original;
-    btn.style.background = "";
-    btn.disabled = false;
-  }, 900);
+/*
+  capitalizar() — convierte "electronics" en "Electronics".
+  Toma el primer caracter, lo pone en mayúscula, y concatena el resto.
+*/
+function capitalizar(texto) {
+  if (!texto) return texto; // si viene vacío, lo devolvemos tal cual
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+  /*
+    charAt(0)   → primer caracter
+    toUpperCase() → lo convierte a mayúscula
+    slice(1)    → el resto del string desde la posición 1
+  */
 }
