@@ -1,17 +1,4 @@
-/* ============================================================
-   NightShop — script.js
-   Versión simplificada con comentarios explicativos
-   ============================================================ */
-
 "use strict";
-/*
-  "use strict" activa el modo estricto de JavaScript.
-  Esto hace que JS sea más exigente: te avisa de errores que
-  normalmente ignoraría silenciosamente (como usar variables
-  sin declarar). Es una buena práctica siempre incluirlo.
-*/
-
-
 /* ----------------------------------------------------------
    CONSTANTES GLOBALES
    ----------------------------------------------------------
