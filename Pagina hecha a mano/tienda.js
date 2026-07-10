@@ -50,3 +50,6 @@ sesion.addEventListener("click", (event) => {
     localStorage.removeItem("token");
     window.location.href = "index.html";
 });
+const datosusuario = document.getElementById("userSpan");
+username = JSON.parse(localStorage.getItem("usuario"));
+datosusuario.textContent = username.username;

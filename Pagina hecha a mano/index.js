@@ -3,8 +3,7 @@ const usuarioInput = document.getElementById("username");
 const passwordInput = document.getElementById("password");
 const mensaje = document.getElementById("mensaje");
 
-// Si el usuario ya inició sesión anteriormente,
-// lo enviamos directamente a la tienda.
+// Si ya hay una sesión iniciada, ir directamente a la tienda
 if (localStorage.getItem("token")) {
     window.location.href = "tienda.html";
 }
@@ -21,18 +20,14 @@ async function login(event) {
     try {
 
         const respuesta = await fetch("https://fakestoreapi.com/auth/login", {
-
             method: "POST",
-
             headers: {
                 "Content-Type": "application/json"
             },
-
             body: JSON.stringify({
                 username: usuario,
                 password: password
             })
-
         });
 
         if (!respuesta.ok) {
@@ -43,11 +38,14 @@ async function login(event) {
 
         localStorage.setItem("token", datos.token);
 
+        const respuestaUsuario = await fetch("https://fakestoreapi.com/users/1");
+        const usuarioData = await respuestaUsuario.json();
+
+        localStorage.setItem("usuario", JSON.stringify(usuarioData));
+
         window.location.href = "tienda.html";
 
     } catch (error) {
         mensaje.textContent = error.message;
-
     }
-
 }
