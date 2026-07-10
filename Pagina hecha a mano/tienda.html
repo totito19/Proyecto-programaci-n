@@ -5,17 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tienda 100% real no fake</title>
 
-    <link rel="stylesheet" href="style.css">
-    <script src="script.js" defer></script>
+    <link rel="stylesheet" href="tienda.css">
+    <script src="tienda.js" defer></script>
 </head>
-
 <body>
     <div class="header">
     <h1><u>Tienda 100% real no fake</u></h1>
     </div>
 
-<section>
-    <div id="carrito" class="carrito">
+<section class="users">
+    Usuario: <span id="userSpan"></span>
+    <div id="sesion" class="sesion">Cerrar Sesión</div>
+</section>
+    
+<section id="carrito" class="carrito">
         <h2>Carrito de compras 🛒</h2>
         <ul id="lista-carrito"></ul>
         <p>Cantidad de productos:
@@ -27,12 +30,11 @@
         <div id="FinishBuy" class="btnFinishBuy">
             Finalizar compra
         </div>
-    </div>
 </section>
 
-    <div class="container">
+<section class="container">
         <div id="productos"></div>
-    </div>
+</section>
 
 </body>
 </html>

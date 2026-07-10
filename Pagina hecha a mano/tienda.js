@@ -1,7 +1,3 @@
-const carrito = document.getElementById("carrito");
-const cantidad = document.getElementById("cantidad");
-const total = document.getElementById("total");
-
 async function cargarProductos() {
 
     const respuesta = await fetch("https://fakestoreapi.com/products");
@@ -30,21 +26,27 @@ async function cargarProductos() {
             ).toFixed(2);
         });
 
-        const btnFinishBuy = document.getElementById("FinishBuy");
-
-        btnFinishBuy.addEventListener("click", () => {
-            if (Number(cantidad.textContent) > 0) {
-                alert(`Compra finalizada. Total: $${total.textContent}`);
-                cantidad.textContent = "0";
-                total.textContent = "0.00";
-            } else {
-                alert("No hay productos en el carrito.");
-            }
-        });
-
         contenedor.appendChild(tarjeta);
     });
-
 }
 
 cargarProductos();
+
+const btnFinishBuy = document.getElementById("FinishBuy");
+
+btnFinishBuy.addEventListener("click", () => {
+    if (Number(cantidad.textContent) > 0) {
+        alert(`Compra finalizada. Total: $${total.textContent}`);
+        cantidad.textContent = "0";
+        total.textContent = "0.00";
+    } else {
+        alert("No hay productos en el carrito.");
+    }
+});
+
+const sesion = document.getElementById("sesion");
+
+sesion.addEventListener("click", (event) => {
+    localStorage.removeItem("token");
+    window.location.href = "index.html";
+});
