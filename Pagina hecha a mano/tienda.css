@@ -9,6 +9,11 @@ body {
     justify-content: center;
 }
 
+.header {
+    text-align: center;
+    margin: 20px 0;
+}
+
 #productos {
     display: flex;
     flex-wrap: wrap;
@@ -46,4 +51,33 @@ body {
     width: 120px;
     height: 120px;
     object-fit: contain;
+}
+
+.btnCarrito {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color .3s;
+}
+
+.btnCarrito:hover {
+    background-color: #0056b3;
+}
+
+.btnFinishBuy {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color .3s;
+    text-align: center;
+}
+
+.btnFinishBuy:hover {
+    background-color: #218838;
 }
