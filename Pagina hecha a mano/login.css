@@ -6,8 +6,9 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    background-color: #2b1c30;
+    min-height: 100vh; 
+    background: url(img/aa.png) no-repeat center center fixed;
+    background-size: cover;
 }
 
 /* Esto va a ser la caja del logguin, necesito mas cafè, tuve que agregar una clase en el html, perdòn*/
