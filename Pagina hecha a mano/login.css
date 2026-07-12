@@ -1,0 +1,63 @@
+/* la idea es hacer un loggin simple pero bonemto, ya me estrese jefe, quiero una paga mas acorde*/
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #2b1c30;
+}
+
+/* Esto va a ser la caja del logguin, necesito mas cafè, tuve que agregar una clase en el html, perdòn*/
+
+
+.ContainerdelloG{
+    background-color: rgba(3, 102, 182,0.1);
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    text-align: center;
+    max-height: 250px;
+}
+
+h1 {
+    margin-bottom: 20px;
+    color: #fff;
+}
+
+form{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+label, input {
+    margin-bottom: 30px;
+}
+
+input{
+    padding: 8px;
+    border: 1px solid #ff7627;
+}
+
+button{
+    padding: 10px 20px;
+    background-color: #ff5e00;
+    color:rgb(255, 255, 255);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+button:hover {
+    background-color: #ff7627;
+    transform: scale(1.05);
+    color: #fff;
+}
+
+button:active {
+    background-color: #36183a;
+}
