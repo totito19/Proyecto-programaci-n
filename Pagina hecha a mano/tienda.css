@@ -200,8 +200,7 @@ body{
   font-size:.85rem;
 }
 
-#productos button,
-#productos .btn-agregar{
+.btnCarrito{
   margin-top:auto;
   padding:.55rem .8rem;
   background:transparent;
@@ -213,13 +212,10 @@ body{
   transition:all .2s ease;
 }
 
-#productos button:hover,
-#productos .btn-agregar:hover{
+.btnCarrito:hover{
   background:#8b5cf6;
   color:#fff;
 }
-
-
 
 /* Scroll */
 
