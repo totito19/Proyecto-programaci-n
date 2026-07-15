@@ -62,3 +62,11 @@ button:hover {
 button:active {
     background-color: #36183a;
 }
+/* Mensaje de error del login */
+
+#mensaje{
+    color:#ffd0c0;
+    margin-top:10px;
+    min-height:18px;
+    font-size:.9rem;
+}

@@ -239,3 +239,184 @@ body{
     margin:1.25rem 1rem;
   }
 }
+/* ===== Perfil de usuario ===== */
+
+.perfil{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.25rem 1.25rem;
+  justify-content:flex-end;
+}
+
+.perfil-item{
+  font-size:.85rem;
+  color:#9a97b3;
+}
+
+.perfil-item span{
+  color:#a78bfa;
+  font-weight:600;
+}
+
+.users{
+  flex-wrap:wrap;
+  gap:.75rem 1rem;
+}
+
+/* ===== Layout general ===== */
+
+.layout{
+  display:block;
+}
+
+/* ===== Filtros ===== */
+
+.filtros{
+  max-width:1100px;
+  margin:1.5rem auto .5rem;
+  padding:0 1.5rem;
+  display:flex;
+  flex-wrap:wrap;
+  gap:1rem;
+}
+
+.buscador,
+.filtroCategoria{
+  padding:.7rem .9rem;
+  background:#131320;
+  color:#f1f0f7;
+  border:1px solid #2a2a45;
+  border-radius:8px;
+  font-size:.9rem;
+}
+
+.buscador{
+  flex:1;
+  min-width:200px;
+}
+
+.buscador:focus,
+.filtroCategoria:focus{
+  outline:none;
+  border-color:#8b5cf6;
+}
+
+.filtroCategoria{
+  cursor:pointer;
+  text-transform:capitalize;
+}
+
+/* ===== Producto: categoría, precio y título ===== */
+
+#productos h2{
+  margin:0;
+  font-size:1rem;
+  font-weight:600;
+}
+
+#productos .categoria{
+  text-transform:capitalize;
+  color:#a78bfa;
+  font-size:.75rem;
+  letter-spacing:.03em;
+}
+
+#productos .precio{
+  color:#f1f0f7;
+  font-weight:700;
+  font-size:1rem;
+}
+
+/* ===== Mensajes ===== */
+
+.mensajeProductos{
+  text-align:center;
+  color:#9a97b3;
+  font-style:italic;
+  margin-top:1.5rem;
+}
+
+/* ===== Controles del carrito ===== */
+
+#lista-carrito li{
+  flex-direction:column;
+  align-items:stretch;
+  gap:.4rem;
+}
+
+.item-nombre{
+  font-size:.85rem;
+}
+
+.item-controles{
+  display:flex;
+  align-items:center;
+  gap:.5rem;
+  justify-content:space-between;
+}
+
+.item-controles button{
+  background:#131320;
+  color:#f1f0f7;
+  border:1px solid #2a2a45;
+  border-radius:6px;
+  cursor:pointer;
+  padding:.15rem .5rem;
+  transition:all .2s ease;
+}
+
+.item-controles button:hover{
+  border-color:#8b5cf6;
+  color:#a78bfa;
+}
+
+.item-cant{
+  min-width:20px;
+  text-align:center;
+  font-weight:600;
+}
+
+.item-subtotal{
+  color:#a78bfa;
+  font-weight:600;
+  margin-left:auto;
+}
+
+/* ===== Footer ===== */
+
+.footer{
+  border-top:1px solid #2a2a45;
+  padding:1.5rem;
+  text-align:center;
+  color:#9a97b3;
+  font-size:.85rem;
+  background:linear-gradient(0deg,#131320,transparent);
+}
+
+/* ===== Efecto de rellenado verde al finalizar compra ===== */
+
+.btnFinishBuy{
+  position:relative;
+  overflow:hidden;
+}
+
+.btnFinishBuy > span{
+  position:relative;
+  z-index:1;
+}
+
+/* Capa verde que se expande de izquierda a derecha */
+.btnFinishBuy::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+  transform:scaleX(0);
+  transform-origin:left;
+  transition:transform .6s ease;
+}
+
+.btnFinishBuy.comprado::before{
+  transform:scaleX(1);
+}

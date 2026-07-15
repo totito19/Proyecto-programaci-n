@@ -9,32 +9,49 @@
     <script src="tienda.js" defer></script>
 </head>
 <body>
-    <div class="header">
-    <h1><u>Tienda 100% real no fake</u></h1>
-    </div>
+    <header class="header">
+        <h1><u>Tienda 100% real no fake</u></h1>
+    </header>
 
-<section class="users">
-    Usuario: <span id="userSpan"></span>
-    <div id="sesion" class="sesion">Cerrar Sesión</div>
-</section>
-    
-<section id="carrito" class="carrito">
+    <nav class="users">
+        <section class="perfil" id="perfil">
+            <span class="perfil-item">Usuario: <span id="userSpan"></span></span>
+            <span class="perfil-item">Nombre: <span id="nombreSpan"></span></span>
+            <span class="perfil-item">Correo: <span id="correoSpan"></span></span>
+            <span class="perfil-item">Teléfono: <span id="telefonoSpan"></span></span>
+        </section>
+        <div id="sesion" class="sesion">Cerrar Sesión</div>
+    </nav>
+    <aside id="carrito" class="carrito">
         <h2>Carrito de compras 🛒</h2>
         <ul id="lista-carrito"></ul>
         <p>Cantidad de productos:
             <span id="cantidad">0</span>
         </p>
         <p>Total:
-            $<span id="total">0</span>
+            $<span id="total">0.00</span>
         </p>
         <div id="FinishBuy" class="btnFinishBuy">
-            Finalizar compra
+            <span>Finalizar compra</span>
         </div>
-</section>
+    </aside>
+    <main class="layout">
+        <section class="filtros">
+            <input type="text" id="buscador" class="buscador" placeholder="Buscar producto por nombre...">
+            <select id="filtroCategoria" class="filtroCategoria">
+                <option value="all">Todas las categorías</option>
+            </select>
+        </section>
 
-<section class="container">
-        <div id="productos"></div>
-</section>
+        <section class="container">
+            <div id="productos"></div>
+            <p id="mensajeProductos" class="mensajeProductos"></p>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>Tienda 100% real no fake — Proyecto Frontend con Fake Store API</p>
+    </footer>
 
 </body>
 </html>
